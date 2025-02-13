@@ -2,8 +2,11 @@ package br.com.rocketskills.petlov;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+
 import java.time.Duration;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -14,51 +17,57 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-class Cadastro {
+import static com.codeborne.selenide.Selenide.*;
+import static com.codeborne.selenide.Condition.*;
 
+class PontoDoacao {
+	String nome;
+	String email;
+	String cep;
+	Integer numero;
+	String complemento;
+	String pets;
+
+	public PontoDoacao(String nome, String email,String cep, Integer numero, String complemento, String pets){
+		this.nome = nome;
+		this.email = email;
+		this.cep = cep;	
+		this.numero = numero;
+		this.complemento = complemento;
+		this.pets = pets;
+	}
+}
+
+class Cadastro {
 	@Test
 	@DisplayName("Deve poder cadastrar um ponto de doação")
 	void createPoint() {
-		WebDriver driver = new ChromeDriver();
-		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(2));
 
-		driver.get("https://petlov.vercel.app/signup");
+		// Pré-condição
+		PontoDoacao ponto = new PontoDoacao(
+			"Estação Pet",
+			"raphael@teste.com",
+			"02567120",
+			320,
+			"teste",
+			"Cachorros"
+		);
 
-		WebElement title = driver.findElement(By.cssSelector("h1"));
-		Wait<WebDriver> wait = new WebDriverWait(driver, Duration.ofSeconds(2));
-		wait.until(d -> title.isDisplayed());
-		assertEquals("Cadastro de ponto de doação", title.getText(), "Verificando o Slogan");
+		open("https://petlov.vercel.app/signup");
+		$("h1").should(text("Cadastro de ponto de doação"));
 
-		WebElement name = driver.findElement(By.cssSelector("input[name=name]"));
-		name.sendKeys("Raphael Point");
+		// Ação
+		$("input[name=name]").type(ponto.nome);
+		$("input[name=email]").setValue(ponto.email);
+		$("input[name=cep]").setValue(ponto.cep);
+		$("input[value='Buscar CEP']").click();
+		$("input[name=addressNumber]").setValue(ponto.numero.toString());
+		$("input[name=addressDetails]").setValue(ponto.complemento);
+		$(By.xpath("//span[text()=\"" + ponto.pets + "\"]/..")).click();
+		$(".button-register").click();
 
-		WebElement email = driver.findElement(By.cssSelector("input[name=email]"));
-		email.sendKeys("raphael@teste.com");	
-		
-		WebElement cep = driver.findElement(By.cssSelector("input[name=cep]"));
-		cep.sendKeys("02567120");
-		
-		WebElement btnCep = driver.findElement(By.cssSelector("input[value='Buscar CEP']"));
-		btnCep.click();
-
-		WebElement addressNumber = driver.findElement(By.cssSelector("input[name=addressNumber]"));
-		addressNumber.sendKeys("320");
-
-		WebElement addressDetails = driver.findElement(By.cssSelector("input[name=addressDetails]"));
-		addressDetails.sendKeys("teste");
-		
-		WebElement getDog = driver.findElement(By.xpath("//span[text()=\"Cachorros\"]/.."));
-		getDog.click();
-
-		WebElement submit = driver.findElement(By.className("button-register"));
-		submit.click();
-
-		WebElement result = driver.findElement(By.cssSelector("body p"));
-		Wait<WebDriver> waitResult = new WebDriverWait(driver, Duration.ofSeconds(2));
-		waitResult.until(d -> result.isDisplayed());
+		// Resultado esperado
 		String target = "Seu ponto de doação foi adicionado com sucesso. Juntos, podemos criar um mundo onde todos os animais recebam o amor e cuidado que merecem.";
-		assertEquals(target, result.getText(), "Verificando a mensagem de sucesso.");
-
-		driver.close();
+		$("#success-page p").should(text(target));
 	}
 }
